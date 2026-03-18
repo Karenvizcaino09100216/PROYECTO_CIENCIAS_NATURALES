@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Calculadora de Estequiometría</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+background:linear-gradient(135deg,#00c6ff,#0072ff);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.calculadora{
+width:650px;
+background:white;
+border-radius:20px;
+box-shadow:0 20px 40px rgba(0,0,0,0.3);
+padding:25px;
+text-align:center;
+}
+
+.imagen{
+width:100%;
+border-radius:15px;
+margin-bottom:15px;
+}
+
+h1{
+color:#0077b6;
+}
+
+.intro{
+text-align:left;
+background:#e0f7fa;
+padding:15px;
+border-radius:10px;
+font-size:14px;
+margin-bottom:20px;
+}
+
+input{
+width:100%;
+padding:15px;
+font-size:16px;
+border-radius:10px;
+border:2px solid #0077b6;
+margin-bottom:15px;
+box-sizing:border-box;
+}
+
+button{
+width:100%;
+padding:15px;
+background:#0096c7;
+color:white;
+border:none;
+border-radius:10px;
+font-size:16px;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+background:#023e8a;
+transform:scale(1.05);
+}
+
+.resultado{
+margin-top:20px;
+font-weight:bold;
+font-size:18px;
+color:#023e8a;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="calculadora">
+
+<img src="https://clickmica.fundaciondescubre.es/files/2017/01/quimica-3.jpg" class="imagen">
+
+<h1>🧪 Calculadora de Estequiometría</h1>
+
+<div class="intro">
+
+<b>¿Qué es la estequiometría?</b><br><br>
+
+Es la rama de la química que estudia la relación entre reactivos y productos en una reacción química.
+
+<br><br>
+
+<b>Pasos:</b>
+<ol>
+<li>Identificar reactivos y productos</li>
+<li>Reconocer elementos</li>
+<li>Identificar subíndices</li>
+<li>Ajustar coeficientes</li>
+<li>Verificar igualdad de átomos</li>
+</ol>
+
+</div>
+
+<input id="ecuacion" placeholder="Ejemplo: Na2CO3 + HCl -> NaCl + H2O + CO2">
+
+<button onclick="verificar()">Analizar y Balancear</button>
+
+<div class="resultado" id="resultado"></div>
+
+</div>
+
+<script>
+
+// ELEMENTOS VALIDOS
+const elementosValidos = [
+"H","He","Li","Be","B","C","N","O","F","Ne",
+"Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca",
+"Fe","Cu","Zn","Ag","Au","Hg","Pb","Sn"
+];
+
+// VALIDAR NOMENCLATURA
+function validarFormula(formula){
+
+let regex = /([A-Z][a-z]?)/g;
+let elementos = formula.match(regex);
+
+if(!elementos) return false;
+
+for(let e of elementos){
+if(!elementosValidos.includes(e)){
+return false;
+}
+}
+
+return true;
+}
+
+// CONTAR ELEMENTOS
+function contar(formula){
+
+let conteo = {};
+let regex=/([A-Z][a-z]?)(\d*)/g;
+let match;
+
+while(match=regex.exec(formula)){
+let elemento=match[1];
+let cantidad=parseInt(match[2])||1;
+
+if(!conteo[elemento]) conteo[elemento]=0;
+conteo[elemento]+=cantidad;
+}
+
+return conteo;
+}
+
+// SUMAR
+function sumar(compuestos, coef){
+
+let total={};
+
+for(let i=0;i<compuestos.length;i++){
+
+let datos=contar(compuestos[i]);
+
+for(let e in datos){
+if(!total[e]) total[e]=0;
+total[e]+=datos[e]*coef[i];
+}
+
+}
+
+return total;
+}
+
+// COMPARAR
+function iguales(a,b){
+
+let elems=new Set([...Object.keys(a),...Object.keys(b)]);
+
+for(let e of elems){
+if((a[e]||0)!=(b[e]||0)){
+return false;
+}
+}
+
+return true;
+}
+
+// BALANCEAR (TANTEO)
+function balancear(reactivos,productos){
+
+let limite=5;
+
+for(let a=1;a<=limite;a++)
+for(let b=1;b<=limite;b++)
+for(let c=1;c<=limite;c++)
+for(let d=1;d<=limite;d++)
+for(let e=1;e<=limite;e++){
+
+let coefR=[a,b];
+let coefP=[c,d,e];
+
+let izq=sumar(reactivos,coefR);
+let der=sumar(productos,coefP);
+
+if(iguales(izq,der)){
+return {coefR,coefP};
+}
+
+}
+
+return null;
+}
+
+// PRINCIPAL
+function verificar(){
+
+let ecuacion=document.getElementById("ecuacion").value;
+
+ecuacion=ecuacion.replace("-->","->");
+
+let partes=ecuacion.split("->");
+
+if(partes.length!=2){
+document.getElementById("resultado").innerHTML=
+"❌ Escribe la ecuación correctamente usando ->";
+return;
+}
+
+let reactivos=partes[0].split("+").map(r=>r.trim());
+let productos=partes[1].split("+").map(p=>p.trim());
+
+// VALIDAR
+for(let r of reactivos){
+if(!validarFormula(r)){
+document.getElementById("resultado").innerHTML=
+"❌ Error de nomenclatura (usa Na, Cl, H, O correctamente)";
+return;
+}
+}
+
+for(let p of productos){
+if(!validarFormula(p)){
+document.getElementById("resultado").innerHTML=
+"❌ Error de nomenclatura (usa Na, Cl, H, O correctamente)";
+return;
+}
+}
+
+// VERIFICAR BALANCEO
+let izq=sumar(reactivos,Array(reactivos.length).fill(1));
+let der=sumar(productos,Array(productos.length).fill(1));
+
+if(iguales(izq,der)){
+document.getElementById("resultado").innerHTML=
+"✔ La ecuación ya está balanceada";
+return;
+}
+
+// BALANCEAR
+let sol=balancear(reactivos,productos);
+
+if(sol){
+
+let textoR=reactivos.map((r,i)=>
+(sol.coefR[i]>1?sol.coefR[i]+" ":"")+r
+);
+
+let textoP=productos.map((p,i)=>
+(sol.coefP[i]>1?sol.coefP[i]+" ":"")+p
+);
+
+document.getElementById("resultado").innerHTML=
+"🧪 Ecuación balanceada:<br><br>"+
+textoR.join(" + ")+" → "+textoP.join(" + ");
+
+}else{
+
+document.getElementById("resultado").innerHTML=
+"⚠ No se pudo balancear automáticamente";
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
